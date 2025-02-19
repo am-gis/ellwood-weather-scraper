@@ -3,7 +3,7 @@
 #
 # This notebook fetches and analyzes historical data from Ellwood weather stations.
 
-# %%
+# %% Imports
 import os
 import json
 import time
@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# %%
+# %% Configuration
 # Configuration
 API_KEY = os.getenv('API_KEY')
 APPLICATION_KEY = os.getenv('APPLICATION_KEY')
@@ -37,7 +37,7 @@ STATIONS = {
     }
 }
 
-# %%
+# %% Functions
 
 
 def get_historical_data(mac_address, start_date, end_date, retries=3, delay=5):
@@ -84,8 +84,6 @@ def get_historical_data(mac_address, start_date, end_date, retries=3, delay=5):
 
     return all_data
 
-# %%
-
 
 def convert_to_local_time(utc_value):
     """Convert UTC timestamp to Pacific Time."""
@@ -114,9 +112,9 @@ def convert_to_local_time(utc_value):
     return utc_dt.astimezone(PACIFIC_TZ)
 
 
-# %%
+# %% Data Download
 # Set the date range for historical data (last 90 days)
-end_date = datetime.now(PACIFIC_TZ).replace(
+end_date = datetime.now().replace(
     hour=0, minute=0, second=0, microsecond=0)
 start_date = end_date - timedelta(days=10)
 

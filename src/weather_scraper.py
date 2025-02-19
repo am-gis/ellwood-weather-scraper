@@ -78,8 +78,17 @@ def get_yesterday_data(mac_address, retries=3, delay=5):
 def convert_to_local_time(utc_value):
     """Convert UTC timestamp to Pacific Time."""
     if isinstance(utc_value, (int, float)):
-        # Handle Unix timestamp (seconds since epoch)
-        utc_dt = datetime.fromtimestamp(utc_value, pytz.UTC)
+        # Handle Unix timestamp (convert from milliseconds to seconds if needed)
+        try:
+            # First try assuming it's in seconds
+            utc_dt = datetime.fromtimestamp(utc_value, pytz.UTC)
+        except (ValueError, OSError):
+            # If that fails, try converting from milliseconds
+            try:
+                utc_dt = datetime.fromtimestamp(utc_value / 1000, pytz.UTC)
+            except (ValueError, OSError) as e:
+                print(f"Error parsing timestamp {utc_value}: {e}")
+                return None
     else:
         try:
             # Try ISO format first
@@ -88,8 +97,12 @@ def convert_to_local_time(utc_value):
         except (ValueError, TypeError):
             # If that fails, try Unix timestamp as string
             try:
-                utc_dt = datetime.fromtimestamp(float(utc_value), pytz.UTC)
-            except (ValueError, TypeError) as e:
+                timestamp = float(utc_value)
+                # Check if timestamp is in milliseconds (13 digits) or seconds (10 digits)
+                if len(str(int(timestamp))) > 10:
+                    timestamp = timestamp / 1000
+                utc_dt = datetime.fromtimestamp(timestamp, pytz.UTC)
+            except (ValueError, TypeError, OSError) as e:
                 print(f"Error parsing timestamp {utc_value}: {e}")
                 return None
     return utc_dt.astimezone(PACIFIC_TZ)
@@ -107,8 +120,15 @@ def process_station_data(station_id, data):
         # Convert data to DataFrame
         df = pd.DataFrame(data)
         
+        # Print timestamp format for debugging
+        print(f"First timestamp value: {df['dateutc'].iloc[0]} (type: {type(df['dateutc'].iloc[0])})")
+        
         # Convert timestamps
         df['local_time'] = df['dateutc'].apply(convert_to_local_time)
+        # Print first converted timestamp for verification
+        if not df['local_time'].isna().all():
+            print(f"First converted timestamp: {df['local_time'].iloc[0]}")
+        
         # Remove rows where timestamp conversion failed
         df = df.dropna(subset=['local_time'])
         if df.empty:

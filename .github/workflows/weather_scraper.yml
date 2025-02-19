@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} # Use the automatic GITHUB_TOKEN
+          token: ${{ secrets.PAT_TOKEN }} # Use Personal Access Token instead of GITHUB_TOKEN
 
       - name: Set up Python
         uses: actions/setup-python@v5

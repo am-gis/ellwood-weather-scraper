@@ -177,3 +177,62 @@ df = df[[
 
 df
 # %%
+
+# Print diagnostic information
+print("Checking for null values in battery voltage data:")
+for station in ['ellwood_main', 'ellwood_mesa']:
+    station_data = df[df['station'] == station]
+    null_count = station_data['batt1volts'].isnull().sum()
+    total_count = len(station_data)
+    print(f"{station}: {null_count} null values out of {total_count} records")
+    print(
+        f"Battery voltage range: {station_data['batt1volts'].min():.2f} to {station_data['batt1volts'].max():.2f}")
+
+# Create the plots with null handling
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10))
+fig.suptitle('Solar Radiation and Battery Voltage by Station', fontsize=16)
+
+# Colors for consistency
+solar_color = 'orange'
+battery_color = 'blue'
+
+# Plot for Ellwood Main
+main_data = df[df['station'] == 'ellwood_main'].dropna(
+    subset=['batt1volts', 'solarradiation'])
+ax1_twin = ax1.twinx()
+
+ax1.plot(main_data['local_time'], main_data['solarradiation'],
+         color=solar_color, label='Solar Radiation')
+ax1_twin.plot(main_data['local_time'], main_data['batt1volts'],
+              color=battery_color, label='Battery Voltage')
+
+ax1.set_title('Ellwood Main')
+ax1.set_xlabel('Local Time')
+ax1.set_ylabel('Solar Radiation (W/m²)', color=solar_color)
+ax1_twin.set_ylabel('Battery Voltage (V)', color=battery_color)
+
+# Plot for Ellwood Mesa
+mesa_data = df[df['station'] == 'ellwood_mesa'].dropna(
+    subset=['batt1volts', 'solarradiation'])
+ax2_twin = ax2.twinx()
+
+ax2.plot(mesa_data['local_time'], mesa_data['solarradiation'],
+         color=solar_color, label='Solar Radiation')
+ax2_twin.plot(mesa_data['local_time'], mesa_data['batt1volts'],
+              color=battery_color, label='Battery Voltage')
+
+ax2.set_title('Ellwood Mesa')
+ax2.set_xlabel('Local Time')
+ax2.set_ylabel('Solar Radiation (W/m²)', color=solar_color)
+ax2_twin.set_ylabel('Battery Voltage (V)', color=battery_color)
+
+# Add legends
+ax1.legend(loc='upper left')
+ax1_twin.legend(loc='upper right')
+ax2.legend(loc='upper left')
+ax2_twin.legend(loc='upper right')
+
+# Adjust layout to prevent overlap
+plt.tight_layout()
+plt.show()
+# %%

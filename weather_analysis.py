@@ -113,10 +113,10 @@ def convert_to_local_time(utc_value):
 
 
 # %% Data Download
-# Set the date range for historical data (last 90 days)
+# Set the date range for historical data
 end_date = datetime.now().replace(
     hour=0, minute=0, second=0, microsecond=0)
-start_date = end_date - timedelta(days=10)
+start_date = end_date - timedelta(days=7)
 
 print(f"Fetching data from {start_date} to {end_date}")
 
@@ -150,5 +150,30 @@ for station_id, station_info in STATIONS.items():
     except Exception as e:
         print(f"Error processing {station_info['name']}: {str(e)}")
 
+# %% Build Dataframe
+
+# Combine all station data into a single DataFrame
+combined_df = pd.concat(
+    [df.assign(station=station_id)
+     for station_id, df in all_station_data.items()],
+    ignore_index=True
+)
+
+# Sort by station and timestamp
+df = combined_df.sort_values(['station', 'local_time'])
+# Select and reorder key columns
+df = df[[
+    'local_time',
+    'station',
+    'tempf',
+    'humidity',
+    'windspeedmph',
+    'windgustmph',
+    'winddir',
+    'solarradiation',
+    'solarradday',
+    'batt1volts'
+]]
+
+df
 # %%
-df.columns

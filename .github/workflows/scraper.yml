@@ -1,0 +1,37 @@
+name: Weather Data Scraper
+
+on:
+  schedule:
+    # Run at 12:15 AM Pacific Time (8:15 UTC) daily
+    - cron: '15 8 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run weather scraper
+      env:
+        API_KEY: ${{ secrets.API_KEY }}
+        APPLICATION_KEY: ${{ secrets.APPLICATION_KEY }}
+      run: python src/weather_scraper.py
+      
+    - name: Commit and push if changes
+      run: |
+        git config --local user.email "openhands@all-hands.dev"
+        git config --local user.name "openhands"
+        git add data/
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update weather data [skip ci]" && git push)

@@ -1,8 +1,10 @@
 # Ellwood Weather Scraper
 
-The purpose of this GitHub repository is to query and archive historical weather data at two locations within Ellwood Mesa Open Space, located in Goleta, CA.
-As part of the [Monarch Butterfly Habitat Management Plan Implementation Phase 1](https://www.cityofgoleta.org/play/parks-recreation-open-spaces/ellwood-mesa-and-monarch-butterfly-habitat/ellwood-improvement-projects/butterfly-habitat-plan-implementation), we are required to track wind speeds within Ellwood Main butterfly grove and report on conditions annually.
-The specific success criteria is "95% of wind speeds are less than 9 mph in the monarch sites (measuring every 15 minutes)."
+## Project Purpose
+
+This repository archives weather data from two monitoring stations at Ellwood Mesa Open Space (Goleta, CA). The data collection supports the [Monarch Butterfly Habitat Management Plan Implementation Phase 1](https://www.cityofgoleta.org/play/parks-recreation-open-spaces/ellwood-mesa-and-monarch-butterfly-habitat/ellwood-improvement-projects/butterfly-habitat-plan-implementation).
+
+**Key Monitoring Requirement:** Wind speeds must be less than 9 mph for 95% of measurements (taken every 15 minutes) within monarch butterfly sites.
 
 ## Weather stations
 
@@ -45,7 +47,16 @@ By archiving daily CSVs in this repository, we maintain a complete historical re
 
 ## Alternative Data Sources
 
+Both weather stations transmit data to multiple weather networks:
+- Ambient Weather Network (primary data source)
+- PWS Weather
+- Weather Underground
 
+While PWS Weather is designed for long-term data archiving, we've observed inconsistent data transmission to their platform. The records, though incomplete, can serve as a backup data source if needed.
+
+Weather Underground also maintains historical records but has similar reliability limitations.
+
+See the station links in the table above if you need to access these alternative data sources.
 
 ## Local Development Setup
 

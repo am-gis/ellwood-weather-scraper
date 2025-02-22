@@ -15,7 +15,41 @@ There are two cellularly enabled KestrelMet 6000 weather stations installed at E
 | [Weather Underground](https://www.wunderground.com/dashboard/pws/KCAGOLET176)                           | [Weather Underground](https://www.wunderground.com/dashboard/pws/KCAGOLET177)                           |
 | [PWS Weather](https://www.pwsweather.com/station/pws/ellwoodmain)                                       | [PWS Weather](https://www.pwsweather.com/station/pws/ellwoodmesa)                                       |
 
-## Setup
+## Data Archiving
+
+### Automated Data Collection
+
+The project uses automated data collection to maintain a complete historical record of weather observations. Here's how it works:
+
+1. The `weather_scraper.py` script runs daily at 12:30 AM Pacific Time via GitHub Actions
+2. The script:
+   - Fetches data from the Ambient Weather Network API
+   - Transforms the observations into a standardized format
+   - Saves the previous day's data as a CSV file in the `data` directory
+   - Automatically commits the new file to the repository
+
+CSV files follow this naming pattern:
+```{station_id}_{YYYY}_{MM}_{DD}.csv```
+
+For workflow troubleshooting, refer to [GitHub Actions Setup](github_action_setup.md).
+
+### Data Retention
+
+This automation is crucial because Ambient Weather Network (AWN) has limited data retention:
+
+- First 30 days: Complete 15-minute interval data
+- 1-12 months: Reduced to 30-minute intervals
+- After 12 months: Data is permanently deleted
+
+By archiving daily CSVs in this repository, we maintain a complete historical record that would otherwise be lost.
+
+## Alternative Data Sources
+
+
+
+## Local Development Setup
+
+If you need to work on this script locally, please follow the steps below:
 
 1. Clone the repository:
 
@@ -31,62 +65,22 @@ There are two cellularly enabled KestrelMet 6000 weather stations installed at E
    ```
 
 3. Configure environment variables:
-   - Create a `.env` file in the project root with:
+   - Create a `.env` file in the project root based on `.env.example`:
 
      ```
-     API_KEY=your_ambient_weather_api_key
-     APPLICATION_KEY=your_ambient_weather_application_key
+     # Ambient Weather Network API credentials
+     API_KEY=your_ambient_weather_api_key_here
+     APPLICATION_KEY=your_ambient_weather_application_key_here
+
+     # Station MAC Addresses
+     ELLWOOD_MAIN_MAC=XX:XX:XX:XX:XX:XX
+     ELLWOOD_MESA_MAC=XX:XX:XX:XX:XX:XX
      ```
 
+   - Get API credentials from your Ambient Weather account settings
+   - Find MAC addresses in your Ambient Weather dashboard
    - For GitHub Actions, set these as repository secrets:
      - `API_KEY`
      - `APPLICATION_KEY`
-
-4. Configure station MAC addresses:
-   - Open `src/weather_scraper.py`
-   - Update the `STATIONS` dictionary with your station MAC addresses
-
-## Usage
-
-### Local Execution
-
-Run the script manually:
-
-```bash
-python src/weather_scraper.py
-```
-
-### Automated Execution
-
-The script runs automatically via GitHub Actions:
-
-- Schedule: Daily at 12:15 AM Pacific Time
-- Stores data in CSV files under the `data/` directory
-- Automatically commits new data files to the repository
-
-## Data Output
-
-CSV files are generated daily for each station:
-
-- Format: `{station_id}_{YYYY}_{MM}_{DD}.csv`
-- Location: `data/` directory
-- Contains:
-  - UTC and local timestamps
-  - All weather measurements from the stations
-  - No placeholder rows for missing data
-
-## Error Handling
-
-- Failed API requests are retried up to 3 times
-- Errors are logged to GitHub Actions console
-- Duplicate data points are automatically filtered
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
-
-## License
-
-[Add your license information here]
+     - `ELLWOOD_MAIN_MAC`
+     - `ELLWOOD_MESA_MAC`

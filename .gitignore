@@ -172,3 +172,4 @@ cython_debug/
 .DS_Store
 .Rproj.user
 ellwood-weather-scraper.Rproj
+.Rhistory

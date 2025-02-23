@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.11" # Specify Python 3.11 instead of 3.x
 
       - name: Install dependencies
         run: |

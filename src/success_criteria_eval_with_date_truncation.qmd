@@ -1,0 +1,238 @@
+---
+title: "Wind Data Success Criteria Report"
+author: "Kyle Nessen"
+date: "2025-02-22"
+format: 
+    html:
+        toc: true
+        theme: cosmo
+        code-fold: true
+        self-contained: true
+execute:
+    echo: true
+    warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Success Criteria Evaluation
+
+# This quarto doc is designed to provide an example of how you might present the wind data in annual reports.
+
+#Updates: Updated on 4/15/25 by Ray Danner to remove data from smoothing lines for the Ellwood Main weather station in mid-March (when the weather station was not working properly)
+
+## Load Data
+
+This code block will go through the `data` directory and combine all files in there.
+
+```{r}
+#| warning: false
+#| message: false
+# Load required libraries
+library(tidyverse)
+library(fs) # for file system operations
+
+# Get list of all CSV files in the data directory
+csv_files <- dir_ls("../data", glob = "*.csv")
+
+# Function to extract station name from filename
+extract_station_name <- function(filepath) {
+    filename <- basename(filepath)
+    if (grepl("ellwood_main", filename)) {
+        return("Ellwood Main")
+    } else if (grepl("ellwood_mesa", filename)) {
+        return("Ellwood Mesa")
+    } else {
+        return("Unknown Station")
+    }
+}
+
+# Read and combine all CSV files
+df <- csv_files %>%
+    # Read each CSV file and add the source filename
+    map_df(function(file) {
+        read_csv(file) %>%
+            mutate(
+                station = extract_station_name(file),
+                source_file = basename(file)
+            )
+    })
+
+# Display just the first few rows
+head(df)
+```
+
+## Filter by Date Range
+
+Use this code block to specify the date range you want to visualize.
+
+```{r}
+# Define start and end dates
+start_date <- "2025-01-01" # Example start date
+end_date <- "2025-04-15" # Example end date
+
+# Filter the dataframe for the date range
+df <- df %>%
+    filter(between(
+        local_time,
+        as.POSIXct(start_date),
+        as.POSIXct(end_date) + days(1) - seconds(1)
+    ))
+
+# Display the date range and number of observations
+cat("Date range:", start_date, "to", end_date, "\n")
+cat("Number of observations:", nrow(df))
+```
+
+## Success Criteria Evaluation
+
+"Wind speeds must be less than 9 mph for 95% of measurements (taken every 15 minutes) within monarch butterfly sites."
+
+```{r}
+# Filter for Ellwood Main station
+ellwood_main <- df %>%
+    filter(station == "Ellwood Main")
+
+# Calculate percentages below 9 mph
+wind_stats <- ellwood_main %>%
+    summarise(
+        pct_wind_below_9 = mean(windspeedmph < 9) * 100,
+        pct_gust_below_9 = mean(windgustmph < 9) * 100,
+        total_measurements = n()
+    )
+
+# Pretty print results
+cat("Success Criteria Evaluation for Ellwood Main Station\n")
+cat("=================================================\n")
+cat(sprintf("Total measurements: %d\n", wind_stats$total_measurements))
+cat(sprintf("Average wind speed < 9 mph: %.1f%%\n", wind_stats$pct_wind_below_9))
+cat(sprintf("Wind gusts < 9 mph: %.1f%%\n", wind_stats$pct_gust_below_9))
+cat("\nSuccess Criteria Met?\n")
+cat(sprintf(
+    "Average wind speed: %s\n",
+    ifelse(wind_stats$pct_wind_below_9 >= 95, "✓ YES", "✗ NO")
+))
+cat(sprintf(
+    "Wind gusts: %s\n",
+    ifelse(wind_stats$pct_gust_below_9 >= 95, "✓ YES", "✗ NO")
+))
+```
+
+## Data Visualization
+
+Suggested way to present the success criteria result.
+
+### Ellwood Main Detail
+
+This shows wind speeds and gusts specifically for the Ellwood Main station:
+
+```{r}
+#| fig.height: 8
+#| fig.width: 12
+
+# Prepare data for Ellwood Main only
+ellwood_main_data <- df %>%
+    filter(station == "Ellwood Main") %>%
+    select(local_time, windspeedmph, windgustmph) %>%
+    pivot_longer(
+        cols = c(windspeedmph, windgustmph),
+        names_to = "measure",
+        values_to = "speed"
+    ) %>%
+    mutate(measure = case_when(
+        measure == "windspeedmph" ~ "Wind Speed",
+        measure == "windgustmph" ~ "Wind Gust"
+    ))
+
+# Subset data to remove gap of time when weather station was not functioning properly
+subset_main_early <- ellwood_main_data |> filter(local_time <= as.POSIXct("2025-03-15 16:15:00"))
+
+subset_main_late <- ellwood_main_data |> filter(local_time >= as.POSIXct("2025-04-01 22:18:00"))
+
+# Create the plot
+ggplot(ellwood_main_data, aes(x = local_time, y = speed, color = measure)) +
+    geom_point(alpha = 0.1, size = 0.5) +
+    geom_smooth(data=subset_main_early, method = "gam", se = TRUE, alpha = 0.2) +
+    geom_smooth(data=subset_main_late, method = "gam", se = TRUE, alpha = 0.2) +
+    geom_hline(yintercept = 9, linetype = "dashed", color = "red", alpha = 0.7) +
+    scale_color_manual(values = c("Wind Speed" = "#FF9E1B", "Wind Gust" = "#D97B0D")) +
+    labs(
+        title = "Ellwood Main Wind Measurements",
+        subtitle = "Comparing wind speeds and gusts",
+        x = "Date",
+        y = "Speed (mph)",
+        color = "Measurement Type"
+    )+ labs(
+    caption = "*The gap in the graph was caused due to a malfunction in the weather station"
+) +
+theme(
+    plot.caption = element_text(size = 10, hjust = 1, face = "italic", color = "gray30")
+)+
+
+    theme_minimal() +
+    theme(
+        legend.position = "top",
+        plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 10, color = "gray40"),
+         axis.title.x = element_text(size = 12),  # Adjust x-axis label size
+        axis.title.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10),    # X-axis numbers
+        axis.text.y = element_text(size = 10)
+    )
+```
+ 
+### Station Comparison
+
+This shows all wind measurements (both regular speeds and gusts) for both stations:
+
+```{r}
+#| fig.height: 8
+#| fig.width: 12
+
+# Prepare the data - combine both stations and both types of measurements
+
+   # Prepare data from Ellwood Mesa
+combined_wind_data <- df %>%
+    select(local_time, station, windspeedmph, windgustmph) %>%
+    filter(station == "Ellwood Mesa") %>%
+    pivot_longer(
+        cols = c(windspeedmph, windgustmph),
+        names_to = "measure",
+        values_to = "speed"
+    )
+
+   # Prepare data from Ellwood Main
+subset_main_early$station <- "Ellwood Main"
+subset_main_late$station <- "Ellwood Main"
+
+# Create the plot
+ggplot(combined_wind_data, aes(x = local_time, y = speed, color = station)) +
+    geom_point(alpha = 0.1, size = 0.5) +
+    geom_smooth(data=subset_main_early, method = "gam", se = TRUE, alpha = 0.2) +
+    geom_smooth(data=subset_main_late, method = "gam", se = TRUE, alpha = 0.2) +
+    geom_smooth(method = "gam", se = TRUE, alpha = 0.2) +
+    geom_hline(yintercept = 9, linetype = "dashed", color = "red", alpha = 0.7) +
+    scale_color_manual(values = c("Ellwood Main" = "#FF9E1B", "Ellwood Mesa" = "#0066CC")) +
+    labs(
+        title = "Wind Measurements Over Time",
+        subtitle = "Including both wind speeds and gusts",
+        x = "Date",
+        y = "Speed (mph)",
+        color = "Station"
+    ) + labs(
+    caption = "*The gap in the graph was caused due to a malfunction in the Ellwood Main weather station"
+) +
+theme(
+    plot.caption = element_text(size = 10, hjust = 1, face = "italic", color = "gray30")
+)+
+    theme_minimal() +
+    theme(
+        legend.position = "top",
+        plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 10, color = "gray40"),
+        axis.title.x = element_text(size = 12),  # Adjust x-axis label size
+        axis.title.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10),    # X-axis numbers
+        axis.text.y = element_text(size = 10)
+    )
+```

@@ -42,16 +42,17 @@ for station_id, info in STATIONS.items():
               f"Set {station_id.upper()}_MAC in your environment variables.")
 
 
-def get_yesterday_data(mac_address, retries=3, delay=5):
+def get_two_days_ago_data(mac_address, retries=3, delay=5):
     """Fetch the previous day's data for a specific station."""
     # Calculate yesterday's date in Pacific Time
     today_midnight = datetime.now(PACIFIC_TZ).replace(
         hour=0, minute=0, second=0, microsecond=0)
     yesterday_midnight = today_midnight - timedelta(days=1)
+    two_days_ago_midnight = today_midnight - timedelta(days=2)
 
     # Convert to UTC for API request
-    end_time_utc = today_midnight.astimezone(pytz.UTC)
-    start_time_utc = yesterday_midnight.astimezone(pytz.UTC)
+    end_time_utc = yesterday_midnight.astimezone(pytz.UTC)
+    start_time_utc = two_days_ago_midnight.astimezone(pytz.UTC)
 
     params = {
         'apiKey': API_KEY,
@@ -77,7 +78,7 @@ def get_yesterday_data(mac_address, retries=3, delay=5):
                 # Filter data to ensure it's within yesterday's range
                 filtered_data = [
                     record for record in data
-                    if yesterday_midnight <= convert_to_local_time(record['dateutc']) < today_midnight
+                    if two_days_ago_midnight <= convert_to_local_time(record['dateutc']) < today_midnight
                 ]
                 data = filtered_data
                 print(f"Number of records received: {len(data)}")
@@ -157,10 +158,10 @@ def process_station_data(station_id, data):
         df['date'] = df['local_time'].dt.date
 
         # Create daily file
-        yesterday = (datetime.now(PACIFIC_TZ)
+        two_days_Ago = (datetime.now(PACIFIC_TZ)
                      .replace(hour=0, minute=0, second=0, microsecond=0)
-                     - timedelta(days=1))
-        file_name = f"{station_id}_{yesterday.strftime('%Y_%m_%d')}.csv"
+                     - timedelta(days=2))
+        file_name = f"{station_id}_{two_days_ago.strftime('%Y_%m_%d')}.csv"
         file_path = os.path.join(DATA_DIR, file_name)
 
         # Create directory if it doesn't exist
@@ -194,7 +195,7 @@ def main():
             continue
 
         try:
-            data = get_yesterday_data(station_info['mac_address'])
+            data = get_two_days_ago_data(station_info['mac_address'])
             file_path = process_station_data(station_id, data)
             print(
                 f"Successfully processed data for {station_info['name']}: {file_path}")

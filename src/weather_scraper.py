@@ -75,10 +75,10 @@ def get_two_days_ago_data(mac_address, retries=3, delay=5):
             if data:
                 print(f"Raw data sample for {mac_address}: {data[0]}")
 
-                # Filter data to ensure it's within yesterday's range
+                # Filter data to ensure it's within two days ago range
                 filtered_data = [
                     record for record in data
-                    if two_days_ago_midnight <= convert_to_local_time(record['dateutc']) < today_midnight
+                    if two_days_ago_midnight <= convert_to_local_time(record['dateutc']) < yesterday_midnight
                 ]
                 data = filtered_data
                 print(f"Number of records received: {len(data)}")
@@ -158,7 +158,7 @@ def process_station_data(station_id, data):
         df['date'] = df['local_time'].dt.date
 
         # Create daily file
-        two_days_Ago = (datetime.now(PACIFIC_TZ)
+        two_days_ago = (datetime.now(PACIFIC_TZ)
                      .replace(hour=0, minute=0, second=0, microsecond=0)
                      - timedelta(days=2))
         file_name = f"{station_id}_{two_days_ago.strftime('%Y_%m_%d')}.csv"
